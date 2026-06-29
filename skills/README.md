@@ -23,7 +23,7 @@ skill-name/
 | `ml-data-workflow` | Проверка данных: табличная витрина, event history, временные срезы, randomized logs, propensities, доступность и преселекты. |
 | `ml-code-workflow` | Проверка воспроизводимости кода: общий пайплайн, notebook, demo, тесты, артефакты и чистота репозитория. |
 | `ml-model-improvement` | Улучшение моделей: бустинг, трансформер, stacking, калибровка, uplift alignment и policy-level диагностики. |
-| `uplift-policy-workflow` | Проверка uplift-части: S-learner, extra NPV, category-level и set-level IPS/SNIPS, overlap и top-N ограничения. |
+| `uplift-policy-workflow` | Проверка uplift-части: S-learner, extra NPV, randomized logs, overlap, IPS/SNIPS и top-N ограничения. |
 | `ai-analyst-workflow` | Сценарий ИИ-аналитика: анализ метрик, логов и дашбордов, поиск аномалий, подготовка задач и отчетов с подтверждением пользователя. |
 
 ## Примеры вызова
