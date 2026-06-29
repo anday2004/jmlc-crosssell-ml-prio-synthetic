@@ -1,13 +1,13 @@
 ---
 name: ml-code-workflow
-description: "Use when implementing or reviewing reproducible code for the CrossSell extra NPV project: data generation, models, policy layer, evaluation, notebook, tests, artifacts, and command-line demo."
+description: "Use when implementing or reviewing reproducible code for the CrossSell extra NPV project: data generation, models, policy layer, evaluation, notebook, tests, artifacts, and command-line runner."
 ---
 
 # ML Code Workflow
 
 ## Workflow
 
-1. Read `README.md`, `run_experiment.py`, `demo.py`, `utils/`, and `tests/` before editing.
+1. Read `README.md`, `run_experiment.py`, `utils/`, `dags/`, and `tests/` before editing.
 2. Keep the public code synthetic and deterministic by default: use explicit seeds and small demo sizes.
 3. Preserve separation of responsibilities:
    - `data.py`: synthetic data, event sequences, randomized logs;
@@ -15,7 +15,8 @@ description: "Use when implementing or reviewing reproducible code for the Cross
    - `policies.py`: score-to-top-N selection with `group_id` constraints;
    - `evaluation.py`: category-level and set-level IPS/SNIPS plus diagnostics;
    - `metrics.py`: model diagnostics;
-   - `run_experiment.py` and `demo.py`: orchestration and artifact saving.
+   - `run_experiment.py`: orchestration and artifact saving;
+   - `dags/crosssell_dag.py`: illustrative Airflow orchestration over the same step functions.
 4. Keep public written artifacts consistent with the repo boundary:
    - `article/`: public CrossSell article and PDF, not the contest-only employer-specific version;
    - `docs/`: methodology and NDA boundary;
@@ -23,7 +24,7 @@ description: "Use when implementing or reviewing reproducible code for the Cross
 5. After changes, run:
 
 ```bash
-python demo.py --bootstrap 10 --artifacts-dir artifacts/smoke
+python run_experiment.py --users 80 --categories 12 --periods 6 --seed 42 --bootstrap 10 --artifacts-dir artifacts/smoke
 pytest
 ```
 
@@ -31,7 +32,7 @@ If `pytest` is unavailable, call the test functions directly and state that form
 
 ## Acceptance Criteria
 
-- `demo.py` completes from a clean checkout and writes readable artifacts.
+- `run_experiment.py` completes from a clean checkout and writes readable artifacts.
 - `notebooks/demo.ipynb` calls the shared pipeline; it must not duplicate hidden notebook-only logic.
 - `pytest` passes without warnings when possible.
 - `.gitignore` excludes generated artifacts, caches, and local notebook output.

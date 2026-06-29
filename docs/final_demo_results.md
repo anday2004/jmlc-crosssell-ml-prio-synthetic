@@ -3,7 +3,7 @@
 Финальный запуск:
 
 ```bash
-python demo.py --bootstrap 80 --artifacts-dir artifacts/final_submission
+python run_experiment.py --users 80 --categories 12 --periods 6 --seed 42 --bootstrap 80 --artifacts-dir artifacts/final_submission
 ```
 
 Конфигурация по умолчанию: `seed=42`, `users=80`, `categories=12`,

@@ -1,10 +1,43 @@
 # Synthetic CrossSell ML Project
 
+[![CI](https://github.com/anday2004/jmlc-crosssell-ml-prio-synthetic/actions/workflows/ci.yml/badge.svg)](https://github.com/anday2004/jmlc-crosssell-ml-prio-synthetic/actions/workflows/ci.yml)
+
 Публичная синтетическая реализация проекта по персонализированному
 ранжированию CrossSell-предложений под ограничения NDA для JMLC в ИТМО.
 
 Репозиторий воспроизводит инженерную и ML-логику задачи, а не рабочие данные
 или производственный код.
+
+## Результаты с первого взгляда (default demo, `seed=42`)
+
+Оффлайн-оценка стратегий на будущем `test`-периоде. `random` заметно проигрывает
+модельным стратегиям, последовательностная (transformer) ветка лучшая по
+category-level SNIPS, а синтетический `oracle_extra_npv` задает верхнюю границу
+по истинному добавочному эффекту.
+
+| Стратегия | SNIPS | DR-style | True extra NPV |
+|---|---:|---:|---:|
+| `extra_npv_transformer` | **105.4** | 102.8 | 40.7 |
+| `extra_npv_stacked` | 103.6 | 101.8 | 40.6 |
+| `oracle_extra_npv` *(синтетический потолок)* | 102.4 | 99.3 | **45.2** |
+| `random` *(нижняя граница)* | 60.8 | 63.6 | 25.8 |
+
+![Сравнение стратегий](docs/img/policy_comparison.png)
+
+![Распределения скоров моделей](docs/img/score_distributions.png)
+
+Полная таблица по всем десяти стратегиям — в [`docs/final_demo_results.md`](docs/final_demo_results.md).
+Графики детерминированы (`seed=42`) и пересобираются командой из раздела [Запуск](#запуск).
+
+## Почему модели написаны с нуля
+
+Бустинг, mini-transformer encoder, S-learner и stacking реализованы вручную на
+`numpy`/`pandas`, без `scikit-learn`, `xgboost` или `torch`. Это осознанный
+выбор для публичной версии: репозиторий тривиально воспроизводится и ревьюится,
+ничего не спрятано за черным ящиком библиотеки, а зависимости минимальны и
+NDA-безопасны (не тянут внутренний стек). Корректность ключевых метрик
+(`roc_auc`, `average_precision`, `brier`) сверена со scikit-learn в
+[`tests/test_metrics_numeric.py`](tests/test_metrics_numeric.py).
 
 ## Основная идея
 
@@ -54,8 +87,13 @@ self-attention, а затем объединяются с embedding катего
 synthetic_crosssell_extra_npv_repo/
 ├── README.md
 ├── requirements.txt
-├── demo.py
+├── requirements-airflow.txt
+├── Dockerfile
 ├── run_experiment.py
+├── .github/workflows/
+│   └── ci.yml
+├── dags/
+│   └── crosssell_dag.py
 ├── article/
 │   ├── crosssell_extra_npv_public.tex
 │   └── crosssell_extra_npv_public.pdf
@@ -63,11 +101,15 @@ synthetic_crosssell_extra_npv_repo/
 │   ├── event_history_contract.md
 │   ├── final_demo_results.md
 │   ├── methodology.md
-│   └── nda_boundary.md
+│   ├── nda_boundary.md
+│   └── img/
+│       ├── policy_comparison.png
+│       └── score_distributions.png
 ├── notebooks/
 │   ├── demo.ipynb
 │   └── README.md
 ├── skills/
+│   ├── example_council_review.md
 │   ├── ai-analyst-workflow/
 │   ├── jmlc-adaption-council/
 │   ├── ml-code-workflow/
@@ -83,7 +125,8 @@ synthetic_crosssell_extra_npv_repo/
 │   ├── evaluation.py
 │   └── plots.py
 └── tests/
-    └── test_pipeline.py
+    ├── test_pipeline.py
+    └── test_metrics_numeric.py
 ```
 
 ## Контракт данных
@@ -149,7 +192,7 @@ synthetic_crosssell_extra_npv_repo/
 
 ## Мой вклад / Contribution
 
-В публичной версии я реализовал весь воспроизводимый контур проекта: генератор синтетических данных, randomized logs, модели отклика и uplift, mini-transformer encoder по событиям, stacking, слой выбора с ограничениями, IPS/SNIPS/DR-оценку, метрики, тесты, demo-запуск и NDA-safe документацию.
+В публичной версии я реализовал весь воспроизводимый контур проекта: генератор синтетических данных, randomized logs, модели отклика и uplift, mini-transformer encoder по событиям, stacking, слой выбора с ограничениями, IPS/SNIPS/DR-оценку, метрики, тесты, воспроизводимую инженерную обвязку (CLI, Dockerfile, GitHub Actions, иллюстративный Airflow DAG) и NDA-safe документацию.
 
 В реальной рабочей постановке мой вклад соответствует ML-части end-to-end: формализация таргета и единицы решения, подготовка исторических данных, обучение и сравнение моделей, скоринг всех пар клиент--категория, переход от response ranking к extra NPV логике, оффлайн-оценка стратегий и согласование ограничений раздачи с продуктовыми правилами.
 
@@ -164,6 +207,8 @@ synthetic_crosssell_extra_npv_repo/
 - `ml-model-improvement`: улучшение бустинга, transformer, stacking и диагностик;
 - `uplift-policy-workflow`: S-learner, extra NPV, randomized logs и проверка policy evaluation.
 
+Два разобранных прогона навыка `jmlc-adaption-council` по этому репозиторию (вход → находки → внесенное исправление) лежат в [`skills/example_council_review.md`](skills/example_council_review.md).
+
 ## Что смотреть в коде
 
 - `utils/data.py`: синтетика, randomized logs, потенциальные исходы и sequence table для трансформера;
@@ -172,50 +217,63 @@ synthetic_crosssell_extra_npv_repo/
 - `utils/evaluation.py`: IPS/SNIPS, out-of-time DR-style diagnostic, ESS и bootstrap;
 - `utils/metrics.py`: AUC/AP/Brier и uplift alignment;
 - `notebooks/demo.ipynb`: основной интерактивный запуск для ревью;
-- `demo.py`: резервный терминальный запуск того же пайплайна;
+- `run_experiment.py`: параметризуемый терминальный запуск того же пайплайна (`run_pipeline`);
+- `dags/crosssell_dag.py`: иллюстративная Airflow-оркестрация поверх тех же step-функций;
+- `Dockerfile`, `.github/workflows/ci.yml`: воспроизводимая сборка и CI (тесты на каждый push);
 - `skills/`: навыки для системной работы с данными, кодом, моделями, uplift и NDA-safe адаптацией.
 
 ## Запуск
 
-Основной способ ревью проекта — Jupyter notebook:
-
-```bash
-jupyter lab notebooks/demo.ipynb
-```
-
-В ноутбуке нужно выполнить `Run All`. Он сохраняет таблицы в
-`artifacts/notebook_demo` и показывает test-split результаты:
-
-- проверки качества синтетики;
-- топ стратегий по SNIPS;
-- AUC/AP/Brier для модельных голов;
-- alignment predicted uplift с синтетическим истинным эффектом.
-
-Если Jupyter не установлен:
+У проекта три входа поверх одного движка (`run_pipeline` в `run_experiment.py`):
+интерактивный notebook, CLI и Airflow DAG. Логика нигде не дублируется.
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Резервный терминальный запуск без Jupyter:
+**1. Notebook (основной способ ревью).**
 
 ```bash
-python demo.py
+jupyter lab notebooks/demo.ipynb
 ```
 
-Он запускает тот же пайплайн и сохраняет артефакты в `artifacts/demo`.
+Выполнить `Run All`. Сохраняет таблицы в `artifacts/notebook_demo` и показывает
+test-split результаты: проверки синтетики, топ стратегий по SNIPS, AUC/AP/Brier
+для модельных голов и alignment predicted uplift с истинным эффектом.
 
-Полный настраиваемый терминальный пайплайн:
+**2. CLI (параметризуемый, для воспроизводимости).**
 
 ```bash
 python run_experiment.py --users 80 --categories 12 --periods 6 --seed 42 --artifacts-dir artifacts/run_01
 ```
 
-Чтобы сохранить диагностические графики:
+Чтобы пересобрать диагностические графики (в т.ч. картинки для README):
 
 ```bash
-python run_experiment.py --users 80 --categories 12 --periods 6 --seed 42 --plots-dir artifacts/plots
+python run_experiment.py --users 80 --categories 12 --periods 6 --seed 42 --plots-dir docs/img
 ```
+
+**3. Airflow DAG (иллюстрация оркестрации).** Шаги `generate → score → policies →
+evaluate` вызывают те же функции из `utils/`. Это публичная параллель к
+продакшн-оркестрации, которая под NDA живет в закрытом контуре (GitLab + Airflow).
+
+```bash
+pip install -r requirements-airflow.txt   # только для DAG
+# затем зарегистрировать dags/crosssell_dag.py в своем Airflow
+```
+
+## Docker и CI
+
+Образ собирается и реально запускает пайплайн с тестами:
+
+```bash
+docker build -t crosssell-extra-npv .
+docker run --rm crosssell-extra-npv
+```
+
+CI на GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml))
+на каждый push прогоняет `pytest`, smoke-запуск пайплайна и сборку Docker-образа;
+статус виден по бейджу в шапке README.
 
 Основные файлы в `artifacts/notebook_demo` или `artifacts/run_01`:
 

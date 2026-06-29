@@ -1,0 +1,4 @@
+# Опциональные зависимости только для запуска иллюстративного DAG (dags/crosssell_dag.py).
+# Ядро проекта (utils/, run_experiment.py, тесты) работает без них, на numpy/pandas.
+apache-airflow>=2.8
+pyarrow>=15.0

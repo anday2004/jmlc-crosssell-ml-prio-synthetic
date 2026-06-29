@@ -35,5 +35,14 @@ Use $uplift-policy-workflow to review the IPS/SNIPS evaluation logic.
 Use $ml-code-workflow to verify that the demo, notebook, and tests are reproducible.
 ```
 
+## Примеры реальной работы навыка
+
+Два разобранных прогона `jmlc-adaption-council` по этому репозиторию (вход →
+находки по линзам → внесенное исправление) лежат в
+[`example_council_review.md`](example_council_review.md):
+
+- engineering-линза нашла, что заявка на CI/Docker/Airflow не подтверждена кодом → добавлены Dockerfile, GitHub Actions и DAG;
+- NDA-линза нашла имя работодателя в сдаваемой версии статьи → публичная версия обобщена до «крупной финтех-экосистемы».
+
 Навыки не содержат рабочие данные, внутренние схемы таблиц, токены, адреса
 сервисов или конфигурацию работодателя.
