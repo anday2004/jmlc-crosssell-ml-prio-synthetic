@@ -1,0 +1,4 @@
+interface:
+  display_name: "ML Data Workflow"
+  short_description: "Audit ML data, time splits, event history, and leakage risks."
+  default_prompt: "Use $ml-data-workflow to review data design, time splits, feature windows, event history, and leakage risks for this ML project."

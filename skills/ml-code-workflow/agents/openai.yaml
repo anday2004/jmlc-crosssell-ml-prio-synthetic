@@ -1,0 +1,4 @@
+interface:
+  display_name: "ML Code Workflow"
+  short_description: "Implement and verify reproducible ML project code."
+  default_prompt: "Use $ml-code-workflow to implement or review the ML project code, run the demo/tests, and check reproducibility."

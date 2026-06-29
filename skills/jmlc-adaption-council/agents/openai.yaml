@@ -1,0 +1,4 @@
+interface:
+  display_name: "JMLC Adaptation Council"
+  short_description: "Review NDA-safe Junior ML Contest project adaptation."
+  default_prompt: "Use $jmlc-adaption-council to review this Junior ML Contest artifact for ML quality, causal validity, product clarity, reproducibility, and NDA safety."

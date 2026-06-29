@@ -1,0 +1,4 @@
+interface:
+  display_name: "Uplift Policy Workflow"
+  short_description: "Review uplift policy evaluation."
+  default_prompt: "Use $uplift-policy-workflow to review uplift modeling, extra NPV prioritization, randomized logs, IPS/SNIPS, and policy evaluation."

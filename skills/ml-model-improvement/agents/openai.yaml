@@ -1,0 +1,4 @@
+interface:
+  display_name: "ML Model Improvement"
+  short_description: "Improve models and diagnostics."
+  default_prompt: "Use $ml-model-improvement to review model quality and propose or implement improvements for baselines, transformer, stacking, and diagnostics."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Analyst Workflow"
+  short_description: "Guide AI metric analysis tasks."
+  default_prompt: "Use $ai-analyst-workflow to analyze ML metrics, logs, dashboard outputs, anomalies, and reporting needs with confirmation before actions."
