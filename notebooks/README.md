@@ -13,7 +13,7 @@ notebooks/demo.ipynb
 1. настройка окружения;
 2. генерация синтетических данных;
 3. обучение табличной модели, mini-transformer encoder и stacking;
-4. оценка на test split стратегий через category-level IPS/SNIPS, set-level IPS/SNIPS и DR;
+4. оценка на test split стратегий через IPS/SNIPS, DR и sanity checks;
 5. sanity checks;
 6. model quality и uplift alignment;
 7. сохранение CSV-артефактов и PNG-графиков.

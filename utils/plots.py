@@ -18,28 +18,39 @@ def _plt():
 
 
 def plot_policy_comparison(evaluation: pd.DataFrame, output_path: str | Path) -> Path:
-    """Сохранить bar chart по IPS/SNIPS и истинному synthetic extra NPV."""
-    required = {"policy_name", "ips_value", "snips_value", "true_extra_npv_value"}
+    """Сохранить bar chart по главной метрике (true extra NPV, инкремент) и SNIPS.
+
+    Главная ось — добавленная ценность (true extra NPV): именно её максимизирует
+    extra NPV-ранжирование. SNIPS (наблюдаемая утилизация, ценность отклика)
+    показан точками как вторичная справочная метрика на верхней оси.
+    """
+    required = {"policy_name", "snips_value", "true_extra_npv_value"}
     missing = required - set(evaluation.columns)
     if missing:
         raise ValueError(f"В evaluation не хватает колонок: {sorted(missing)}")
 
-    plot_frame = evaluation.sort_values("snips_value", ascending=True).copy()
+    plot_frame = evaluation.sort_values("true_extra_npv_value", ascending=True).copy()
     labels = plot_frame["policy_name"].tolist()
-    y_pos = range(len(plot_frame))
+    y_pos = list(range(len(plot_frame)))
 
     plt = _plt()
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
 
     fig, ax = plt.subplots(figsize=(10, max(4, 0.42 * len(plot_frame))))
-    ax.barh(y_pos, plot_frame["snips_value"], label="SNIPS", color="#2f6f9f", alpha=0.86)
-    ax.scatter(plot_frame["ips_value"], y_pos, label="IPS", color="#d95f02", zorder=3)
-    ax.set_yticks(list(y_pos), labels=labels)
-    ax.set_xlabel("Оценка ценности стратегии")
-    ax.set_title("Сравнение стратегий")
+    bars = ax.barh(y_pos, plot_frame["true_extra_npv_value"], color="#2f6f9f", alpha=0.88,
+                   label="true extra NPV (инкремент, главная)")
+    ax.set_yticks(y_pos, labels=labels)
+    ax.set_xlabel("Добавленная ценность — true extra NPV (инкремент)")
+    ax.set_title("Сравнение стратегий по добавленной ценности")
     ax.grid(axis="x", alpha=0.25)
-    ax.legend(loc="lower right")
+
+    ax2 = ax.twiny()
+    pts = ax2.scatter(plot_frame["snips_value"], y_pos, color="#d95f02", zorder=3,
+                      label="SNIPS (отклик, вторичная)")
+    ax2.set_xlabel("SNIPS — наблюдаемая утилизация (отклик)")
+
+    ax.legend(handles=[bars, pts], loc="lower right", fontsize=9)
     fig.tight_layout()
     fig.savefig(out, dpi=160)
     plt.close(fig)

@@ -104,6 +104,54 @@ def evaluate_model_quality(scored: pd.DataFrame, split: str | None = None) -> pd
     return pd.DataFrame(rows)
 
 
+def evaluate_treatment_overlap(
+    assignments: pd.DataFrame,
+    train_split: str = "train",
+    eval_splits: tuple[str, ...] = ("val", "test"),
+    seed: int = 42,
+) -> pd.DataFrame:
+    """Причинная overlap-диагностика рандомизированной раздачи.
+
+    Обучает простую модель предсказывать факт показа `shown` по предраздаточным
+    признакам и оценивает её ROC AUC на отложенных срезах. Значение около 0.5
+    означает, что показ не предсказуем по признакам до раздачи, то есть в логах
+    нет скрытой селекции и причинная интерпретация uplift надёжна. Заметное
+    превышение 0.5 сигнализировало бы о нарушении рандомизации.
+    """
+    from utils.models import (
+        SimpleGradientBoostingClassifier,
+        infer_feature_columns,
+        make_feature_matrix,
+    )
+
+    feature_columns = [col for col in infer_feature_columns(assignments) if col != "is_available"]
+    train = assignments.loc[(assignments["split"] == train_split) & assignments["is_available"]].copy()
+    if train.empty or train["shown"].nunique() < 2:
+        return pd.DataFrame(columns=["split", "n_rows", "shown_rate", "roc_auc_shown"])
+
+    x_train, training_columns = make_feature_matrix(train, feature_columns)
+    y_train = train["shown"].astype(int).to_numpy()
+    model = SimpleGradientBoostingClassifier(n_estimators=80, random_state=seed)
+    model.fit(x_train.to_numpy(), y_train)
+
+    rows = []
+    for split in eval_splits:
+        frame = assignments.loc[(assignments["split"] == split) & assignments["is_available"]].copy()
+        if frame.empty or frame["shown"].nunique() < 2:
+            continue
+        x_eval, _ = make_feature_matrix(frame, feature_columns, training_columns=training_columns)
+        p_shown = model.predict_proba(x_eval.to_numpy())[:, 1]
+        rows.append(
+            {
+                "split": split,
+                "n_rows": int(len(frame)),
+                "shown_rate": float(frame["shown"].mean()),
+                "roc_auc_shown": roc_auc_score(frame["shown"].astype(int), p_shown),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 def evaluate_uplift_alignment(scored: pd.DataFrame, split: str | None = None, top_share: float = 0.10) -> pd.DataFrame:
     """Сравнить предсказанный uplift с синтетическим истинным эффектом."""
     frame = scored.copy()

@@ -15,7 +15,7 @@ from utils.data import (
     validate_synthetic_dataset,
 )
 from utils.evaluation import evaluate_policies
-from utils.metrics import evaluate_model_quality, evaluate_uplift_alignment
+from utils.metrics import evaluate_model_quality, evaluate_treatment_overlap, evaluate_uplift_alignment
 from utils.models import (
     calibrate_stacked_scores,
     score_with_model_bundle,
@@ -43,9 +43,9 @@ MODEL_COLS = [
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Сгенерировать синтетический CrossSell-датасет.")
-    parser.add_argument("--users", type=int, default=300, help="Число синтетических пользователей.")
-    parser.add_argument("--categories", type=int, default=18, help="Число CrossSell-категорий.")
-    parser.add_argument("--periods", type=int, default=8, help="Число временных периодов.")
+    parser.add_argument("--users", type=int, default=80, help="Число синтетических пользователей (по умолчанию demo-конфигурация).")
+    parser.add_argument("--categories", type=int, default=12, help="Число CrossSell-категорий.")
+    parser.add_argument("--periods", type=int, default=6, help="Число временных периодов.")
     parser.add_argument("--seed", type=int, default=42, help="Случайное зерно.")
     parser.add_argument("--bootstrap", type=int, default=100, help="Число bootstrap-итераций для IPS/SNIPS.")
     parser.add_argument("--artifacts-dir", type=str, default=None, help="Папка для сохранения CSV-артефактов.")
@@ -67,9 +67,12 @@ def save_artifacts(
     uplift_alignment_all: pd.DataFrame,
     checks: dict[str, bool],
     sequence_sample: pd.DataFrame,
+    treatment_overlap: pd.DataFrame | None = None,
 ) -> list[Path]:
     out_dir = Path(artifacts_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    if treatment_overlap is None:
+        treatment_overlap = pd.DataFrame()
 
     score_summary = scored[MODEL_COLS].describe().round(6).reset_index().rename(columns={"index": "metric"})
     availability_summary = (
@@ -94,6 +97,7 @@ def save_artifacts(
         "uplift_alignment.csv": uplift_alignment,
         "uplift_alignment_test.csv": uplift_alignment,
         "uplift_alignment_all.csv": uplift_alignment_all,
+        "propensity_overlap.csv": treatment_overlap,
         "policy_assignments.csv": policy_assignments,
         "policy_slot_counts.csv": policy_counts,
         "checks.csv": pd.DataFrame([checks]),
@@ -232,6 +236,7 @@ def run_pipeline(config: SyntheticConfig, n_bootstrap: int = 100) -> dict:
     model_quality = evaluate_model_quality(scored, split="test")
     uplift_alignment_all = evaluate_uplift_alignment(scored)
     uplift_alignment = evaluate_uplift_alignment(scored, split="test")
+    treatment_overlap = evaluate_treatment_overlap(dataset.assignments, seed=config.seed)
 
     return {
         "dataset": dataset,
@@ -247,6 +252,7 @@ def run_pipeline(config: SyntheticConfig, n_bootstrap: int = 100) -> dict:
         "model_quality_all": model_quality_all,
         "uplift_alignment": uplift_alignment,
         "uplift_alignment_all": uplift_alignment_all,
+        "treatment_overlap": treatment_overlap,
     }
 
 
@@ -272,6 +278,7 @@ def main() -> None:
     model_quality_all = results["model_quality_all"]
     uplift_alignment = results["uplift_alignment"]
     uplift_alignment_all = results["uplift_alignment_all"]
+    treatment_overlap = results["treatment_overlap"]
 
     print("Синтетический датасет сгенерирован.")
     print(f"users:       {dataset.users.shape}")
@@ -324,6 +331,9 @@ def main() -> None:
     print("\nСогласованность uplift с синтетическим эффектом:")
     print(uplift_alignment.round(4).to_string(index=False))
 
+    print("\nOverlap-диагностика (AUC предсказания показа по признакам, ~0.5 — рандомизация чистая):")
+    print(treatment_overlap.round(4).to_string(index=False))
+
     if args.artifacts_dir:
         written = save_artifacts(
             args.artifacts_dir,
@@ -339,6 +349,7 @@ def main() -> None:
             uplift_alignment_all=uplift_alignment_all,
             checks=checks,
             sequence_sample=sequence_sample,
+            treatment_overlap=treatment_overlap,
         )
         print("\nCSV-артефакты сохранены:")
         for path in written:

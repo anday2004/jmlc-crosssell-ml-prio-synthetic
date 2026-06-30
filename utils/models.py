@@ -694,42 +694,65 @@ def train_stacked_bundle(
     )
 
 
+def _to_logit(p: np.ndarray) -> np.ndarray:
+    p = np.clip(np.asarray(p, dtype=float), 1e-4, 1.0 - 1e-4)
+    return np.log(p / (1.0 - p))
+
+
+def _fit_platt(raw_prob: np.ndarray, y: np.ndarray, iters: int = 800, lr: float = 0.25) -> tuple[float, float]:
+    """Platt scaling: подобрать (a, b) в sigmoid(a*logit(raw)+b) градиентным спуском."""
+    logits = _to_logit(raw_prob)
+    target = np.asarray(y, dtype=float)
+    a, b = 1.0, 0.0
+    n = max(1, len(target))
+    for _ in range(iters):
+        p = sigmoid(a * logits + b)
+        grad_a = float(np.dot(p - target, logits) / n)
+        grad_b = float(np.sum(p - target) / n)
+        a -= lr * grad_a
+        b -= lr * grad_b
+    return a, b
+
+
+def _apply_platt(raw_prob: np.ndarray, a: float, b: float) -> np.ndarray:
+    return np.clip(sigmoid(a * _to_logit(raw_prob) + b), 0.001, 0.999)
+
+
 def calibrate_stacked_scores(
     scored: pd.DataFrame,
-    transformer_weight: float = 0.94,
-    tabular_weight: float = 0.03,
-    stacked_head_weight: float = 0.03,
+    calib_splits: tuple[str, ...] = ("calib", "val", "train"),
 ) -> pd.DataFrame:
-    """Сгладить stacked-прогнозы как ensemble табличной и transformer-ветки."""
-    out = scored.copy()
-    total = transformer_weight + tabular_weight + stacked_head_weight
-    if total <= 0:
-        raise ValueError("Сумма весов stacking calibration должна быть положительной.")
-    transformer_weight /= total
-    tabular_weight /= total
-    stacked_head_weight /= total
+    """Откалибровать stacked-прогнозы Platt scaling по отложенному калибровочному срезу.
 
-    for name in ["p1_hat", "p0_hat"]:
-        stacked_col = f"stacked_{name}"
-        transformer_col = f"transformer_{name}"
-        tabular_col = name
-        if not {stacked_col, transformer_col, tabular_col}.issubset(out.columns):
+    Это настоящая per-arm калибровка вероятностей, а не ручной ансамбль: для головы
+    показа (`p1`) параметры подбираются на shown-строках калибровочного среза, для
+    головы контроля (`p0`) — на not-shown строках. Калибруется наблюдаемая частота
+    утилизации, поэтому stacking остаётся самостоятельной моделью на расширенных
+    признаках, а не сглаживается к трансформеру. Если отдельного `calib` среза нет,
+    используется первый доступный из `calib_splits`.
+    """
+    out = scored.copy()
+    calib = None
+    for split in calib_splits:
+        candidate = out.loc[out["split"] == split]
+        if not candidate.empty:
+            calib = candidate
+            break
+    if calib is None:
+        return out
+
+    arms = [
+        ("stacked_p1_hat", calib.loc[calib["shown"].astype(bool) & calib["is_available"]]),
+        ("stacked_p0_hat", calib.loc[~calib["shown"].astype(bool) & calib["is_available"]]),
+    ]
+    for col, arm_frame in arms:
+        if col not in out.columns or arm_frame.empty or arm_frame["utilized"].nunique() < 2:
             continue
-        raw_stacked = out[stacked_col].astype(float).copy()
-        out[stacked_col] = np.clip(
-            transformer_weight * out[transformer_col].astype(float)
-            + tabular_weight * out[tabular_col].astype(float)
-            + stacked_head_weight * raw_stacked,
-            0.001,
-            0.999,
-        )
-    if {"stacked_p_util_hat", "p_util_hat"}.issubset(out.columns):
-        raw_response = out["stacked_p_util_hat"].astype(float).copy()
-        out["stacked_p_util_hat"] = np.clip(
-            0.78 * out["p_util_hat"].astype(float) + 0.22 * raw_response,
-            0.001,
-            0.999,
-        )
+        a, b = _fit_platt(arm_frame[col].to_numpy(), arm_frame["utilized"].to_numpy())
+        out[col] = _apply_platt(out[col].to_numpy(), a, b)
+
+    if {"stacked_p_util_hat", "stacked_p1_hat"}.issubset(out.columns):
+        out["stacked_p_util_hat"] = out["stacked_p1_hat"]
     if {"stacked_p1_hat", "stacked_p0_hat"}.issubset(out.columns):
         out["stacked_uplift_hat"] = out["stacked_p1_hat"] - out["stacked_p0_hat"]
     return out

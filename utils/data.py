@@ -554,22 +554,25 @@ def _score_true_outcomes(period_frame: pd.DataFrame, period_id: int, config: Syn
     p0 = sigmoid(base_logit)
 
     response_headroom = np.clip(0.98 - p0, 0.02, 0.98)
+    # Эффект показа (uplift) намеренно разведён с базовым откликом p0: он опирается
+    # в основном на treatment-специфичные драйверы (склонность реагировать на показ,
+    # чувствительность категории к воздействию, недавние intent-события из истории) и
+    # отрицательно связан с p0. Драйверы базового отклика (group_pref, recent_interest,
+    # app_signal, recency) в эффект почти не входят, поэтому ранжирование по extra NPV
+    # отличается от ранжирования по отклику и демонстрирует свой смысл.
     effect_logit = (
-        -0.95
-        + 2.25 * out["recommendation_sensitivity"].to_numpy()
-        + 1.55 * out["group_pref"].to_numpy()
-        + 0.88 * recent_interest
-        + 0.42 * app_signal
-        + 2.65 * sequence_intent
-        + 1.30 * sequence_commit
-        + 0.55 * recency_signal
-        + 3.10 * out["treatment_sensitivity"].to_numpy()
-        - 1.75 * out["offer_fatigue"].to_numpy()
+        -0.55
+        + 3.00 * out["recommendation_sensitivity"].to_numpy()
+        + 4.10 * out["treatment_sensitivity"].to_numpy()
+        + 2.90 * sequence_intent
+        + 1.45 * sequence_commit
+        - 2.20 * out["offer_fatigue"].to_numpy()
+        + 0.15 * out["group_pref"].to_numpy()
         - 0.45 * prior_shown
         - 0.88 * prior_ignored
-        - 0.60 * p0
+        - 1.30 * p0
     )
-    positive_delta = response_headroom * (0.04 + 0.42 * sigmoid(effect_logit))
+    positive_delta = response_headroom * (0.03 + 0.52 * sigmoid(effect_logit))
     negative_fatigue = 0.030 * np.clip(prior_ignored, 0, 3) + 0.018 * np.clip(prior_shown - 2, 0, 4)
     delta = np.clip(positive_delta - negative_fatigue, -0.055, 0.36)
 
