@@ -27,7 +27,7 @@ DR_Q_COLUMNS_BY_POLICY = {
     "random": ["p1_hat"],
     "npv": ["p1_hat"],
     "response_true": ["p1_true"],
-    "oracle_extra_npv": ["p1_true"],
+    "synthetic_ceiling": ["p1_true"],
 }
 
 

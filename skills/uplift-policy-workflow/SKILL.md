@@ -45,7 +45,7 @@ description: "Use when designing, reviewing, or debugging uplift modeling and po
 - Using response probability as uplift.
 - Evaluating on categories that were not eligible for the user.
 - Forgetting that `NPV * p1` and `NPV * (p1 - p0)` answer different business questions.
-- Calling the synthetic oracle a deployable strategy.
+- Calling the synthetic ceiling a deployable strategy.
 - Reporting category-level IPS as if it fully captures set-level interactions.
 - Letting the policy re-rank unavailable categories after scoring all user-category pairs.
 

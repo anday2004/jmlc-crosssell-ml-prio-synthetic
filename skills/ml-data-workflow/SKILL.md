@@ -40,7 +40,7 @@ description: "Use when designing, reviewing, or debugging ML data for the CrossS
 2. Check fixed slot count and unique `group_id` in shown sets.
 3. Check cutoffs against `source_event_time`.
 4. Check propensity distribution and effective overlap.
-5. Check that synthetic oracle has signal but does not leak into model features.
+5. Check that synthetic ceiling has signal but does not leak into model features.
 
 ## Expected Artifacts
 

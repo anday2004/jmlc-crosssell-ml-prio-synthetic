@@ -50,7 +50,7 @@ description: "Use when improving or reviewing model quality for the CrossSell ex
 Prefer results where:
 
 - random is clearly below model strategies;
-- the synthetic oracle is best or near-best on true hidden effect;
+- the synthetic ceiling is best or near-best on true hidden effect;
 - extra NPV strategies beat or match response strategies on uplift-oriented diagnostics;
 - confidence intervals, ESS, and match rates are inspected before making strong IPS claims.
 

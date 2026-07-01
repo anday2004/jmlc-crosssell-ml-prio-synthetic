@@ -842,12 +842,12 @@ def validate_synthetic_dataset(dataset: SyntheticDataset, config: SyntheticConfi
     )
     non_negative_recency = bool((sequence.loc[non_padding, "recency_bucket"] >= 0).all())
 
-    oracle_positive = assignments["extra_npv_true"].max() > assignments["extra_npv_true"].mean()
+    ceiling_positive = assignments["extra_npv_true"].max() > assignments["extra_npv_true"].mean()
     return {
         "fixed_slots": bool((shown_per_unit == config.n_slots).all()),
         "positive_propensity_for_shown": bool((assignments.loc[assignments["shown"], "show_propensity"] > 0).all()),
         "no_future_events_in_history": no_future_events_in_history,
         "fixed_sequence_length": fixed_sequence_length,
         "non_negative_recency_bucket": non_negative_recency,
-        "oracle_has_signal": bool(oracle_positive),
+        "ceiling_has_signal": bool(ceiling_positive),
     }

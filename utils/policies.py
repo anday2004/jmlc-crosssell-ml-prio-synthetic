@@ -172,12 +172,12 @@ def make_response_true_policy(candidate_frame: pd.DataFrame, n_slots: int = 3) -
     )
 
 
-def make_oracle_extra_npv_policy(candidate_frame: pd.DataFrame, n_slots: int = 3) -> pd.DataFrame:
+def make_synthetic_ceiling_policy(candidate_frame: pd.DataFrame, n_slots: int = 3) -> pd.DataFrame:
     return make_extra_npv_policy(
         candidate_frame,
         p1_col="p1_true",
         p0_col="p0_true",
-        policy_name="oracle_extra_npv",
+        policy_name="synthetic_ceiling",
         n_slots=n_slots,
     )
 
@@ -188,7 +188,7 @@ def make_policy_family(candidate_frame: pd.DataFrame, n_slots: int = 3, seed: in
         make_random_policy(candidate_frame, n_slots=n_slots, seed=seed),
         make_npv_policy(candidate_frame, n_slots=n_slots),
         make_response_true_policy(candidate_frame, n_slots=n_slots),
-        make_oracle_extra_npv_policy(candidate_frame, n_slots=n_slots),
+        make_synthetic_ceiling_policy(candidate_frame, n_slots=n_slots),
     ]
     return pd.concat(policies, ignore_index=True)
 

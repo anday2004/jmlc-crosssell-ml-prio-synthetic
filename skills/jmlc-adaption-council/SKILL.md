@@ -22,7 +22,7 @@ notebook, code, final metrics, or GitHub-ready folder.
 - Public GitHub artifacts use the NDA-safe CrossSell wording; the separate contest submission may contain the more specific employer/project wording if the applicant intentionally keeps it outside the public repo.
 - Article claims match what the public code actually demonstrates.
 - Real closed-work claims are clearly separated from synthetic public evidence.
-- All baselines are named consistently: random, NPV-only, response value, extra NPV, and synthetic oracle.
+- All baselines are named consistently: random, NPV-only, response value, extra NPV, and synthetic ceiling.
 - The contribution section states what the applicant did without erasing team/product collaboration.
 - The repo can be reviewed without access to employer systems.
 - Any mention of AI use explains the applicant's workflow, not a vague "AI helped me".

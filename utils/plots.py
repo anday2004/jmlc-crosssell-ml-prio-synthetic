@@ -38,7 +38,7 @@ def plot_policy_comparison(evaluation: pd.DataFrame, output_path: str | Path) ->
     out.parent.mkdir(parents=True, exist_ok=True)
 
     fig, ax = plt.subplots(figsize=(10, max(4, 0.42 * len(plot_frame))))
-    bars = ax.barh(y_pos, plot_frame["true_extra_npv_value"], color="#2f6f9f", alpha=0.88,
+    bars = ax.barh(y_pos, plot_frame["true_extra_npv_value"], color="#8c1822", alpha=0.92,
                    label="true extra NPV (инкремент, главная)")
     ax.set_yticks(y_pos, labels=labels)
     ax.set_xlabel("Добавленная ценность — true extra NPV (инкремент)")
@@ -46,7 +46,8 @@ def plot_policy_comparison(evaluation: pd.DataFrame, output_path: str | Path) ->
     ax.grid(axis="x", alpha=0.25)
 
     ax2 = ax.twiny()
-    pts = ax2.scatter(plot_frame["snips_value"], y_pos, color="#d95f02", zorder=3,
+    pts = ax2.scatter(plot_frame["snips_value"], y_pos, color="#e0902c", zorder=3,
+                      edgecolors="#5a3000", linewidths=0.5, s=46,
                       label="SNIPS (отклик, вторичная)")
     ax2.set_xlabel("SNIPS — наблюдаемая утилизация (отклик)")
 
@@ -71,9 +72,10 @@ def plot_score_distributions(scored: pd.DataFrame, output_path: str | Path) -> P
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
 
+    palette = {"p_util_hat": "#8c1822", "transformer_p_util_hat": "#e0902c", "stacked_p_util_hat": "#5a6b7a"}
     fig, ax = plt.subplots(figsize=(9, 5))
     for col in score_columns:
-        ax.hist(scored[col], bins=30, alpha=0.45, density=True, label=col)
+        ax.hist(scored[col], bins=30, alpha=0.5, density=True, label=col, color=palette.get(col))
     ax.set_xlabel("Прогноз вероятности утилизации")
     ax.set_ylabel("Плотность")
     ax.set_title("Распределения модельных скорингов")

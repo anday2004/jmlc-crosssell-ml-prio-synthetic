@@ -37,7 +37,7 @@ def test_synthetic_generator_contract() -> None:
     assert checks["no_future_events_in_history"]
     assert checks["fixed_sequence_length"]
     assert checks["non_negative_recency_bucket"]
-    assert checks["oracle_has_signal"]
+    assert checks["ceiling_has_signal"]
 
 
 def test_greedy_policies_use_unique_groups() -> None:
@@ -86,7 +86,7 @@ def test_policy_evaluation_returns_core_metrics() -> None:
     assert {"ips_value", "snips_value", "dr_value", "ess", "matched_rows", "true_extra_npv_value"}.issubset(
         result.columns
     )
-    assert set(result["policy_name"]) == {"random", "npv", "response_true", "oracle_extra_npv"}
+    assert set(result["policy_name"]) == {"random", "npv", "response_true", "synthetic_ceiling"}
     assert (result["matched_rows"] > 0).all()
     assert (result["ess"] > 0).all()
 
@@ -188,8 +188,8 @@ def test_default_seed_policy_sanity_on_test_split() -> None:
     evaluation = result["evaluation"]
 
     random_true = float(evaluation.loc[evaluation["policy_name"] == "random", "true_extra_npv_value"].iloc[0])
-    oracle_true = float(
-        evaluation.loc[evaluation["policy_name"] == "oracle_extra_npv", "true_extra_npv_value"].iloc[0]
+    ceiling_true = float(
+        evaluation.loc[evaluation["policy_name"] == "synthetic_ceiling", "true_extra_npv_value"].iloc[0]
     )
     model_true = evaluation.loc[
         evaluation["policy_name"].isin(
@@ -205,7 +205,7 @@ def test_default_seed_policy_sanity_on_test_split() -> None:
         "true_extra_npv_value",
     ]
 
-    assert oracle_true == evaluation["true_extra_npv_value"].max()
+    assert ceiling_true == evaluation["true_extra_npv_value"].max()
     assert model_true.max() > random_true * 1.35
     assert "evaluation_all" in result
     assert result["evaluation"]["policy_name"].nunique() == result["evaluation_all"]["policy_name"].nunique()
