@@ -20,7 +20,7 @@ def _plt():
 def plot_policy_comparison(evaluation: pd.DataFrame, output_path: str | Path) -> Path:
     """Сохранить bar chart по главной метрике (true extra NPV, инкремент) и SNIPS.
 
-    Главная ось — добавленная ценность (true extra NPV): именно её максимизирует
+    Главная ось — добавленная ценность (true extra NPV): именно ее максимизирует
     extra NPV-ранжирование. SNIPS (наблюдаемая утилизация, ценность отклика)
     показан точками как вторичная справочная метрика на верхней оси.
     """

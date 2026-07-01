@@ -554,7 +554,7 @@ def _score_true_outcomes(period_frame: pd.DataFrame, period_id: int, config: Syn
     p0 = sigmoid(base_logit)
 
     response_headroom = np.clip(0.98 - p0, 0.02, 0.98)
-    # Эффект показа (uplift) намеренно разведён с базовым откликом p0: он опирается
+    # Эффект показа (uplift) намеренно разведен с базовым откликом p0: он опирается
     # в основном на treatment-специфичные драйверы (склонность реагировать на показ,
     # чувствительность категории к воздействию, недавние intent-события из истории) и
     # отрицательно связан с p0. Драйверы базового отклика (group_pref, recent_interest,
